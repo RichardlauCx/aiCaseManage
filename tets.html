@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>aiCaseManage Pro - AI病例管理系统</title>
+    <style>
+        :root {
+            --primary: #409eff;
+            --success: #67c23a;
+            --warning: #e6a23c;
+            --danger: #f56c6c;
+            --info: #909399;
+            --bg: #f4f7fa;
+            --card-bg: white;
+            --text: #333;
+        }
+        body.dark {
+            --primary: #66b1ff;
+            --success: #85ce61;
+            --warning: #f3b760;
+            --danger: #f78989;
+            --info: #a8a8a8;
+            --bg: #1e1e1e;
+            --card-bg: #2d2d2d;
+            --text: #e0e0e0;
+        }
+        body {
+            font-family: "Microsoft YaHei", Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            transition: background 0.3s;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 6px 30px rgba(0,0,0,0.15);
+            overflow: hidden;
+        }
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--success));
+            color: white;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+        }
+        h1 { margin: 0; font-size: 2.5em; }
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 50px;
+            cursor: pointer;
+        }
+        .search-bar {
+            padding: 20px;
+            background: #f9f9f9;
+            border-bottom: 1px solid #eee;
+        }
+        .search-bar input {
+            width: 100%;
+            max-width: 500px;
+            padding: 12px;
+            border-radius: 30px;
+            border: 1px solid #ddd;
+            font-size: 1.1em;
+        }
+        .patient-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+            padding: 30px;
+        }
+        .patient-card {
+            background: var(--card-bg);
+            border: 1px solid #eee;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .patient-card:hover { transform: translateY(-8px); box-shadow: 0 12px 25px rgba(0,0,0,0.15); }
+        .patient-card .progress {
+            height: 12px;
+            background: #eee;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        .patient-card .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--warning), var(--success));
+            width: 0%;
+            transition: width 0.5s;
+        }
+        .patient-card .click-hint {
+            text-align: right;
+            color: var(--primary);
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-info { background: var(--info); color: white; }
+        .btn-location { background: #13ce66; color: white; }
+        button:hover { opacity: 0.9; transform: scale(1.05); }
+        .section {
+            padding: 30px;
+        }
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #eee;
+            margin-bottom: 30px;
+        }
+        .tab {
+            padding: 15px 30px;
+            cursor: pointer;
+            font-weight: bold;
+            border-bottom: 4px solid transparent;
+        }
+        .tab.active {
+            border-bottom: 4px solid var(--primary);
+            color: var(--primary);
+        }
+        .task-group {
+            background: #f9fbff;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid #e0e8ff;
+        }
+        .monitor-group {
+            background: #e6f7ff;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .task-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        .task-header label {
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+        .status {
+            font-size: 1.1em;
+            font-weight: bold;
+            padding: 8px 15px;
+            border-radius: 30px;
+        }
+        .status-complete { background: #e1f3d8; color: var(--success); }
+        .status-incomplete { background: #fde2e2; color: var(--danger); }
+        .auto-proof {
+            font-size: 1em;
+            padding: 8px 15px;
+            border-radius: 20px;
+            background: #fff3cd;
+            color: var(--warning);
+        }
+        .location-info {
+            background: #f0f8ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        input[type="checkbox"] {
+            transform: scale(1.5);
+            margin-right: 15px;
+        }
+        textarea, input[type="text"], input[type="date"], input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #dcdfe6;
+            font-family: inherit;
+        }
+        #monitorStatus {
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            min-height: 50px;
+            font-weight: bold;
+        }
+        .completion-dashboard {
+            background: linear-gradient(135deg, #f0f9ff, #e6f7ff);
+            padding: 30px;
+            border-radius: 16px;
+            text-align: center;
+            margin: 30px 0;
+        }
+        .progress-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: conic-gradient(var(--success) 0% 0%, #eee 0%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px auto;
+            font-size: 2em;
+            font-weight: bold;
+            color: var(--success);
+        }
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: #999;
+            font-size: 0.9em;
+            border-top: 1px solid #eee;
+        }
+        @media (max-width: 768px) {
+            .patient-list { grid-template-columns: 1fr; }
+            .tabs { flex-wrap: wrap; }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>aiCaseManage Pro</h1>
+            <p>AI辅助病例管理系统 · 完整版（所有功能恢复 + 自动位置监控优化）</p>
+            <button class="theme-toggle" onclick="toggleTheme()">🌙 暗黑模式</button>
+        </header>
+
+        <div id="listView">
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="🔍 搜索病人姓名或ID..." oninput="filterPatients()">
+            </div>
+
+            <div class="section">
+                <div class="add-patient" style="margin-bottom:30px; text-align:center;">
+                    <h2>新增病人</h2>
+                    <input type="text" id="newPatientName" placeholder="病人姓名（必填）">
+                    <input type="text" id="newPatientId" placeholder="病人ID（可选）">
+                    <input type="date" id="newPatientDate" placeholder="入院日期">
+                    <button class="btn-primary" onclick="addPatient()">+ 添加病人</button>
+                </div>
+
+                <h2>病人列表 <span id="patientCount" style="color:var(--info);"></span></h2>
+                <div class="patient-list" id="patientList"></div>
+            </div>
+        </div>
+
+        <div id="patientDetail" style="display:none;">
+            <div class="section">
+                <button class="btn-danger" onclick="backToList()">← 返回列表</button>
+                <button class="btn-danger" onclick="deleteCurrentPatient()" style="margin-left:15px;">🗑️ 删除病人</button>
+                <button class="btn-info" onclick="exportPatientData()" style="margin-left:15px;">📄 导出JSON</button>
+                <button class="btn-success" onclick="window.print()" style="margin-left:15px;">🖨️ 打印病例</button>
+
+                <h2 style="margin:30px 0;">病人详情：<span id="currentPatientName"></span> <small>(ID: <span id="currentPatientId"></span>)</small></h2>
+
+                <div class="tabs">
+                    <div class="tab active" onclick="showTab('basic')">基本信息</div>
+                    <div class="tab" onclick="showTab('tasks')">诊疗任务</div>
+                    <div class="tab" onclick="showTab('summary')">完成度仪表盘</div>
+                </div>
+
+                <div id="tab-basic">
+                    <div class="task-group">
+                        <h3>基本信息</h3>
+                        <input type="text" id="basicAge" placeholder="年龄" onchange="saveData()">
+                        <input type="text" id="basicGender" placeholder="性别（男/女/其他）" onchange="saveData()">
+                        <input type="date" id="basicAdmissionDate" onchange="saveData()">
+                        <textarea id="basicDiagnosis" rows="3" placeholder="初步诊断" onchange="saveData()"></textarea>
+                        <textarea id="basicHistory" rows="4" placeholder="病史及既往史" onchange="saveData()"></textarea>
+                    </div>
+                </div>
+
+                <div id="tab-tasks" style="display:none;">
+                    <div class="monitor-group">
+                        <h3>📍 自动位置打卡监控（影像 & 理疗）</h3>
+                        <button class="btn-success" onclick="startAutoMonitoring()">🚀 启动自动监控（抵达即自动完成）</button>
+                        <button class="btn-danger" onclick="stopAutoMonitoring()">⏹️ 停止监控</button>
+                        <p style="margin:20px 0; font-size:0.95em;">启动后系统将持续监控位置（仅页面打开时），一旦进入任一任务的范围将<strong>自动完成对应任务</strong>。<br>推荐前往现场前启动，可有效避免单次定位超时问题。</p>
+                        <div id="monitorStatus">未启动监控</div>
+                    </div>
+
+                    <!-- 开药 -->
+                    <div class="task-group">
+                        <div class="task-header">
+                            <div>
+                                <input type="checkbox" id="prescribeDone" onchange="saveData()">
+                                <label>开药（处方）</label>
+                            </div>
+                            <span class="status" id="prescribeStatus">未完成</span>
+                        </div>
+                        <input type="date" id="prescribeDate" onchange="saveData()">
+                        <textarea id="prescribeDetails" placeholder="药品名称、剂量、用法、注意事项等" rows="5" onchange="saveData()"></textarea>
+                        <textarea id="prescribeResult" placeholder="用药后情况/报告" rows="3" onchange="saveData()"></textarea>
+                    </div>
+
+                    <!-- 影像 -->
+                    <div class="task-group">
+                        <div class="task-header">
+                            <div>
+                                <input type="checkbox" id="imagingDone" onchange="saveData()">
+                                <label>影像检查（中心）</label>
+                            </div>
+                            <span class="status" id="imagingStatus">未完成</span>
+                        </div>
+                        <input type="date" id="imagingDate" onchange="saveData()">
+                        <textarea id="imagingParts" placeholder="检查部位（如：腰椎、胸部CT等）" rows="2" onchange="saveData()"></textarea>
+                        <textarea id="imagingDetails" placeholder="检查项目、临床指征" rows="4" onchange="saveData()"></textarea>
+                        <textarea id="imagingResult" placeholder="影像报告完整描述" rows="6" onchange="saveData()"></textarea>
+                        <input type="text" id="imagingUrl" placeholder="影像图片链接（可选，输入URL可预览）" onchange="saveData(); previewImage()">
+                        <img id="imagingPreview" style="max-width:100%; border-radius:8px; margin-top:10px; display:none;">
+
+                        <div class="location-info">
+                            <h4>📍 影像中心位置打卡</h4>
+                            <input type="text" id="imagingLocationName" placeholder="位置名称（如：XX医院影像中心）" onchange="saveData()">
+                            <input type="number" step="any" id="imagingLat" placeholder="预期纬度（Latitude）" onchange="saveData()">
+                            <input type="number" step="any" id="imagingLng" placeholder="预期经度（Longitude）" onchange="saveData()">
+                            <input type="number" id="imagingRadius" placeholder="允许半径（米，默认100）" value="100" onchange="saveData()">
+                            <button class="btn-location" onclick="setCurrentAsExpected('imaging')">🧭 设置当前位置为预期位置</button>
+                            <button class="btn-success" onclick="checkInLocation('imaging')">✅ 手动打卡验证</button>
+                            <p id="imagingLocationStatus" style="margin-top:10px;"></p>
+                        </div>
+                    </div>
+
+                    <!-- 理疗 -->
+                    <div class="task-group">
+                        <div class="task-header">
+                            <div>
+                                <input type="checkbox" id="physioDone" onchange="saveData()">
+                                <label>理疗（物理治疗）</label>
+                            </div>
+                            <div>
+                                <span class="status" id="physioStatus">未完成</span>
+                                <span class="auto-proof" id="physioProof"></span>
+                            </div>
+                        </div>
+                        <input type="date" id="physioDate" onchange="saveData()">
+                        <textarea id="physioPosition" placeholder="治疗位置描述（如：腰椎L4-L5）" rows="2" onchange="updateAutoProof()"></textarea>
+                        <textarea id="physioDetails" placeholder="治疗方案、频率、参数" rows="4" onchange="saveData()"></textarea>
+                        <textarea id="physioResult" placeholder="治疗后效果/报告" rows="3" onchange="saveData()"></textarea>
+
+                        <div class="location-info">
+                            <h4>📍 理疗位置打卡</h4>
+                            <input type="text" id="physioLocationName" placeholder="位置名称（如：XX医院理疗室）" onchange="saveData()">
+                            <input type="number" step="any" id="physioLat" placeholder="预期纬度（Latitude）" onchange="saveData()">
+                            <input type="number" step="any" id="physioLng" placeholder="预期经度（Longitude）" onchange="saveData()">
+                            <input type="number" id="physioRadius" placeholder="允许半径（米，默认100）" value="100" onchange="saveData()">
+                            <button class="btn-location" onclick="setCurrentAsExpected('physio')">🧭 设置当前位置为预期位置</button>
+                            <button class="btn-success" onclick="checkInLocation('physio')">✅ 手动打卡验证</button>
+                            <p id="physioLocationStatus" style="margin-top:10px;"></p>
+                            <p style="font-size:0.9em;color:#999;">原文本自动证明逻辑保留，可作为辅助。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-summary" style="display:none;">
+                    <div class="completion-dashboard">
+                        <h3>诊疗完成度仪表盘</h3>
+                        <div class="progress-circle" id="progressCircle">0%</div>
+                        <p id="completionText" style="font-size:1.3em; margin:20px 0;"></p>
+                        <div style="display:flex; justify-content:center; gap:30px; margin-top:30px;">
+                            <div><strong>开药：</strong><span id="summaryPrescribe">未完成</span></div>
+                            <div><strong>影像：</strong><span id="summaryImaging">未完成</span></div>
+                            <div><strong>理疗：</strong><span id="summaryPhysio">未完成</span></div>
+                        </div>
+                        <div style="margin-top:30px;" id="proofSummary"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            aiCaseManage Pro · 纯前端完整版<br>
+            已恢复所有功能 · 自动位置监控优化（持续监控 + 自动完成）
+        </footer>
+    </div>
+
+    <script>
+        let patients = JSON.parse(localStorage.getItem('aiCaseManage_pro_patients') || '{}');
+        let currentPatientKey = null;
+        let watchId = null;
+
+        function getDistance(lat1, lng1, lat2, lng2) {
+            const R = 6371000;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLng = (lng2 - lng1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLng/2) * Math.sin(dLng/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        function getCurrentPosition(callback) {
+            if (!navigator.geolocation) {
+                alert('您的浏览器不支持地理位置功能');
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(
+                pos => callback(pos.coords.latitude, pos.coords.longitude),
+                err => {
+                    let msg = '单次定位失败：';
+                    if (err.code === 1) msg += '权限拒绝';
+                    else if (err.code === 2) msg += '位置不可用';
+                    else if (err.code === 3) msg += '超时（建议启动自动监控）';
+                    alert(msg);
+                },
+                { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+            );
+        }
+
+        function setCurrentAsExpected(type) {
+            getCurrentPosition((lat, lng) => {
+                document.getElementById(type + 'Lat').value = lat.toFixed(8);
+                document.getElementById(type + 'Lng').value = lng.toFixed(8);
+                document.getElementById(type + 'LocationStatus').textContent = `已设置当前位置（${lat.toFixed(8)}, ${lng.toFixed(8)}）为预期位置`;
+                saveData();
+            });
+        }
+
+        function checkInLocation(type) {
+            const latEl = document.getElementById(type + 'Lat');
+            const lngEl = document.getElementById(type + 'Lng');
+            const radiusEl = document.getElementById(type + 'Radius');
+            const statusEl = document.getElementById(type + 'LocationStatus');
+
+            if (!latEl.value || !lngEl.value) {
+                alert('请先设置预期位置');
+                return;
+            }
+
+            const expectedLat = parseFloat(latEl.value);
+            const expectedLng = parseFloat(lngEl.value);
+            const radius = parseFloat(radiusEl.value) || 100;
+
+            getCurrentPosition((currentLat, currentLng) => {
+                const distance = getDistance(currentLat, currentLng, expectedLat, expectedLng);
+                if (distance <= radius) {
+                    document.getElementById(type + 'Done').checked = true;
+                    statusEl.innerHTML = `✅ 手动打卡成功！距离 ${distance.toFixed(1)} 米`;
+                    statusEl.style.color = 'green';
+                    saveData();
+                    updateAllStatus();
+                    updateCompletionDashboard();
+                } else {
+                    statusEl.innerHTML = `❌ 打卡失败！距离 ${distance.toFixed(1)} 米（> ${radius} 米）`;
+                    statusEl.style.color = 'red';
+                }
+            });
+        }
+
+        function startAutoMonitoring() {
+            if (watchId) {
+                document.getElementById('monitorStatus').textContent = '监控已在运行中';
+                return;
+            }
+            if (!navigator.geolocation) {
+                alert('浏览器不支持地理位置');
+                return;
+            }
+
+            const p = patients[currentPatientKey];
+            const hasTask = (!p.imagingDone && p.imagingLat) || (!p.physioDone && p.physioLat);
+
+            if (!hasTask) {
+                document.getElementById('monitorStatus').textContent = '无未完成的位置任务';
+                return;
+            }
+
+            watchId = navigator.geolocation.watchPosition(
+                pos => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    let html = `🚀 监控中...<br>当前位置: ${lat.toFixed(8)}, ${lng.toFixed(8)}<br>`;
+                    let completed = false;
+
+                    if (!p.imagingDone && p.imagingLat) {
+                        const dist = getDistance(lat, lng, parseFloat(p.imagingLat), parseFloat(p.imagingLng));
+                        const r = p.imagingRadius || 100;
+                        html += `影像距离: ${dist.toFixed(1)}m (≤${r}m)<br>`;
+                        if (dist <= r) {
+                            document.getElementById('imagingDone').checked = true;
+                            document.getElementById('imagingLocationStatus').innerHTML = `✅ 自动完成！距离 ${dist.toFixed(1)}m`;
+                            html += '<span style="color:green;">✅ 影像自动完成</span><br>';
+                            completed = true;
+                        }
+                    }
+
+                    if (!p.physioDone && p.physioLat) {
+                        const dist = getDistance(lat, lng, parseFloat(p.physioLat), parseFloat(p.physioLng));
+                        const r = p.physioRadius || 100;
+                        html += `理疗距离: ${dist.toFixed(1)}m (≤${r}m)<br>`;
+                        if (dist <= r) {
+                            document.getElementById('physioDone').checked = true;
+                            document.getElementById('physioLocationStatus').innerHTML = `✅ 自动完成！距离 ${dist.toFixed(1)}m`;
+                            html += '<span style="color:green;">✅ 理疗自动完成</span><br>';
+                            completed = true;
+                        }
+                    }
+
+                    document.getElementById('monitorStatus').innerHTML = html;
+                    if (completed) {
+                        saveData();
+                        updateAllStatus();
+                        updateCompletionDashboard();
+                        if (p.imagingDone && p.physioDone) {
+                            stopAutoMonitoring();
+                            document.getElementById('monitorStatus').innerHTML += '<br><strong>🎉 所有位置任务完成，监控停止</strong>';
+                        }
+                    }
+                },
+                err => {
+                    let msg = '定位错误（自动重试）: ';
+                    if (err.code === 3) msg += '超时';
+                    document.getElementById('monitorStatus').innerHTML = `<span style="color:#e6a23c;">${msg} 继续尝试...</span>`;
+                },
+                { enableHighAccuracy: true, timeout: 30000, maximumAge: 5000 }
+            );
+
+            document.getElementById('monitorStatus').textContent = '🚀 启动中...';
+        }
+
+        function stopAutoMonitoring() {
+            if (watchId) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+            document.getElementById('monitorStatus').textContent = '⏹️ 已停止';
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark');
+            localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+        }
+        if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
+
+        function renderPatientList() {
+            const list = document.getElementById('patientList');
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            list.innerHTML = '';
+            let count = 0;
+            for (let key in patients) {
+                const p = patients[key];
+                if (search && !p.name.toLowerCase().includes(search) && !(p.id || '').toLowerCase().includes(search)) continue;
+                count++;
+                const doneCount = (p.prescribeDone ? 1 : 0) + (p.imagingDone ? 1 : 0) + (p.physioDone ? 1 : 0);
+                const percent = Math.round((doneCount / 3) * 100);
+
+                const card = document.createElement('div');
+                card.className = 'patient-card';
+                card.onclick = () => selectPatient(key);
+                card.innerHTML = `
+                    <strong style="font-size:1.4em;">${p.name}</strong><br>
+                    <small>ID: ${p.id || '无'} | 入院: ${p.basicAdmissionDate || '未填'}</small>
+                    <div class="progress"><div class="progress-bar" style="width:${percent}%"></div></div>
+                    <p>完成度：${doneCount}/3 (${percent}%)</p>
+                    <div class="click-hint">点击查看详情 →</div>
+                `;
+                list.appendChild(card);
+            }
+            document.getElementById('patientCount').textContent = `（共 ${count} 人）`;
+            if (count === 0) list.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:#999;">暂无匹配病人</p>';
+        }
+
+        function filterPatients() { renderPatientList(); }
+
+        function addPatient() {
+            const name = document.getElementById('newPatientName').value.trim();
+            if (!name) return alert('请输入病人姓名');
+            const key = Date.now().toString();
+            patients[key] = {
+                name, id: document.getElementById('newPatientId').value.trim() || null,
+                basicAge: '', basicGender: '', basicAdmissionDate: document.getElementById('newPatientDate').value,
+                basicDiagnosis: '', basicHistory: '',
+                prescribeDone: false, prescribeDate: '', prescribeDetails: '', prescribeResult: '',
+                imagingDone: false, imagingDate: '', imagingParts: '', imagingDetails: '', imagingResult: '', imagingUrl: '',
+                imagingLocationName: '', imagingLat: '', imagingLng: '', imagingRadius: 100,
+                physioDone: false, physioDate: '', physioPosition: '', physioDetails: '', physioResult: '',
+                physioLocationName: '', physioLat: '', physioLng: '', physioRadius: 100
+            };
+            savePatients();
+            renderPatientList();
+            document.getElementById('newPatientName').value = '';
+            document.getElementById('newPatientId').value = '';
+            document.getElementById('newPatientDate').value = '';
+        }
+
+        function selectPatient(key) {
+            stopAutoMonitoring();
+            currentPatientKey = key;
+            const p = patients[key];
+            document.getElementById('currentPatientName').textContent = p.name;
+            document.getElementById('currentPatientId').textContent = p.id || '无';
+
+            document.getElementById('basicAge').value = p.basicAge || '';
+            document.getElementById('basicGender').value = p.basicGender || '';
+            document.getElementById('basicAdmissionDate').value = p.basicAdmissionDate || '';
+            document.getElementById('basicDiagnosis').value = p.basicDiagnosis || '';
+            document.getElementById('basicHistory').value = p.basicHistory || '';
+
+            document.getElementById('prescribeDone').checked = p.prescribeDone;
+            document.getElementById('prescribeDate').value = p.prescribeDate || '';
+            document.getElementById('prescribeDetails').value = p.prescribeDetails || '';
+            document.getElementById('prescribeResult').value = p.prescribeResult || '';
+
+            document.getElementById('imagingDone').checked = p.imagingDone;
+            document.getElementById('imagingDate').value = p.imagingDate || '';
+            document.getElementById('imagingParts').value = p.imagingParts || '';
+            document.getElementById('imagingDetails').value = p.imagingDetails || '';
+            document.getElementById('imagingResult').value = p.imagingResult || '';
+            document.getElementById('imagingUrl').value = p.imagingUrl || '';
+            document.getElementById('imagingLocationName').value = p.imagingLocationName || '';
+            document.getElementById('imagingLat').value = p.imagingLat || '';
+            document.getElementById('imagingLng').value = p.imagingLng || '';
+            document.getElementById('imagingRadius').value = p.imagingRadius || 100;
+            document.getElementById('imagingLocationStatus').textContent = '';
+
+            document.getElementById('physioDone').checked = p.physioDone;
+            document.getElementById('physioDate').value = p.physioDate || '';
+            document.getElementById('physioPosition').value = p.physioPosition || '';
+            document.getElementById('physioDetails').value = p.physioDetails || '';
+            document.getElementById('physioResult').value = p.physioResult || '';
+            document.getElementById('physioLocationName').value = p.physioLocationName || '';
+            document.getElementById('physioLat').value = p.physioLat || '';
+            document.getElementById('physioLng').value = p.physioLng || '';
+            document.getElementById('physioRadius').value = p.physioRadius || 100;
+            document.getElementById('physioLocationStatus').textContent = '';
+
+            previewImage();
+            updateAllStatus();
+            updateCompletionDashboard();
+            showTab('basic');
+            document.getElementById('listView').style.display = 'none';
+            document.getElementById('patientDetail').style.display = 'block';
+
+            const hasUnfinished = (!p.imagingDone && p.imagingLat && p.imagingLng) || (!p.physioDone && p.physioLat && p.physioLng);
+            if (hasUnfinished) {
+                setTimeout(() => {
+                    if (confirm('检测到未完成的位置任务且已设置预期位置\n是否立即启动自动监控？（推荐开启，抵达即自动完成）')) {
+                        showTab('tasks');
+                        startAutoMonitoring();
+                    }
+                }, 500);
+            }
+        }
+
+        function showTab(tabName) {
+            document.querySelectorAll('#patientDetail > .section > div[id^="tab-"]').forEach(el => el.style.display = 'none');
+            document.getElementById('tab-' + tabName).style.display = 'block';
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.tab[onclick="showTab('${tabName}')"]`).classList.add('active');
+            if (tabName === 'summary') updateCompletionDashboard();
+        }
+
+        function backToList() {
+            stopAutoMonitoring();
+            currentPatientKey = null;
+            document.getElementById('patientDetail').style.display = 'none';
+            document.getElementById('listView').style.display = 'block';
+            renderPatientList();
+        }
+
+        function deleteCurrentPatient() {
+            if (confirm('确定永久删除该病人所有记录？')) {
+                delete patients[currentPatientKey];
+                savePatients();
+                backToList();
+            }
+        }
+
+        function exportPatientData() {
+            const data = patients[currentPatientKey];
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `病人_${data.name}_${data.id || '未知'}.json`;
+            a.click();
+        }
+
+        function previewImage() {
+            const url = document.getElementById('imagingUrl').value.trim();
+            const img = document.getElementById('imagingPreview');
+            if (url) {
+                img.src = url;
+                img.style.display = 'block';
+            } else {
+                img.style.display = 'none';
+            }
+        }
+
+        function saveData() {
+            if (!currentPatientKey) return;
+            const p = patients[currentPatientKey];
+            p.basicAge = document.getElementById('basicAge').value;
+            p.basicGender = document.getElementById('basicGender').value;
+            p.basicAdmissionDate = document.getElementById('basicAdmissionDate').value;
+            p.basicDiagnosis = document.getElementById('basicDiagnosis').value;
+            p.basicHistory = document.getElementById('basicHistory').value;
+
+            p.prescribeDone = document.getElementById('prescribeDone').checked;
+            p.prescribeDate = document.getElementById('prescribeDate').value;
+            p.prescribeDetails = document.getElementById('prescribeDetails').value;
+            p.prescribeResult = document.getElementById('prescribeResult').value;
+
+            p.imagingDone = document.getElementById('imagingDone').checked;
+            p.imagingDate = document.getElementById('imagingDate').value;
+            p.imagingParts = document.getElementById('imagingParts').value;
+            p.imagingDetails = document.getElementById('imagingDetails').value;
+            p.imagingResult = document.getElementById('imagingResult').value;
+            p.imagingUrl = document.getElementById('imagingUrl').value;
+            p.imagingLocationName = document.getElementById('imagingLocationName').value;
+            p.imagingLat = document.getElementById('imagingLat').value;
+            p.imagingLng = document.getElementById('imagingLng').value;
+            p.imagingRadius = document.getElementById('imagingRadius').value || 100;
+
+            p.physioDone = document.getElementById('physioDone').checked;
+            p.physioDate = document.getElementById('physioDate').value;
+            p.physioPosition = document.getElementById('physioPosition').value;
+            p.physioDetails = document.getElementById('physioDetails').value;
+            p.physioResult = document.getElementById('physioResult').value;
+            p.physioLocationName = document.getElementById('physioLocationName').value;
+            p.physioLat = document.getElementById('physioLat').value;
+            p.physioLng = document.getElementById('physioLng').value;
+            p.physioRadius = document.getElementById('physioRadius').value || 100;
+
+            savePatients();
+            updateAllStatus();
+            renderPatientList();
+        }
+
+        function updateAutoProof() {
+            const imagingParts = (document.getElementById('imagingParts').value || '').toLowerCase();
+            const physioPosition = (document.getElementById('physioPosition').value || '').toLowerCase();
+            const proof = document.getElementById('physioProof');
+            let message = '';
+            if (physioPosition.includes('重合') || physioPosition.includes('合适') || physioPosition.includes('匹配')) {
+                message = '✓ 文本含关键词，辅助证明';
+            } else if (imagingParts && physioPosition && (physioPosition.includes(imagingParts) || imagingParts.includes(physioPosition))) {
+                message = '✓ 文本部位匹配，辅助证明';
+            }
+            proof.innerHTML = message;
+            updateCompletionDashboard();
+        }
+
+        function updateAllStatus() {
+            updateStatus('prescribe', document.getElementById('prescribeDone').checked);
+            updateStatus('imaging', document.getElementById('imagingDone').checked);
+            updateStatus('physio', document.getElementById('physioDone').checked);
+            updateAutoProof();
+        }
+
+        function updateStatus(prefix, done) {
+            const el = document.getElementById(prefix + 'Status');
+            el.textContent = done ? '已完成' : '未完成';
+            el.className = 'status ' + (done ? 'status-complete' : 'status-incomplete');
+        }
+
+        function updateCompletionDashboard() {
+            if (!currentPatientKey) return;
+            const p = patients[currentPatientKey];
+            const doneCount = (p.prescribeDone ? 1 : 0) + (p.imagingDone ? 1 : 0) + (p.physioDone ? 1 : 0);
+            const percent = Math.round((doneCount / 3) * 100);
+
+            document.getElementById('progressCircle').style.background = `conic-gradient(var(--success) ${percent}%, #eee ${percent}%)`;
+            document.getElementById('progressCircle').textContent = `${percent}%`;
+
+            document.getElementById('completionText').textContent = doneCount === 3 ? '🎉 全部三项任务已完成！病例可结案' : `已完成 ${doneCount}/3 项核心任务`;
+
+            document.getElementById('summaryPrescribe').textContent = p.prescribeDone ? '✅ 已完成' : '❌ 未完成';
+            document.getElementById('summaryImaging').textContent = p.imagingDone ? '✅ 已完成' : '❌ 未完成';
+            document.getElementById('summaryPhysio').textContent = p.physioDone ? '✅ 已完成' : '❌ 未完成';
+
+            let proofHTML = '';
+            if (document.getElementById('physioProof').innerHTML) proofHTML += '<p style="color:var(--success);">✅ 文本辅助证明通过</p>';
+            if (p.imagingDone && p.physioDone) proofHTML += '<p style="color:var(--success);font-weight:bold;">✅ 影像与理疗位置打卡均完成</p>';
+            document.getElementById('proofSummary').innerHTML = proofHTML;
+        }
+
+        function savePatients() {
+            localStorage.setItem('aiCaseManage_pro_patients', JSON.stringify(patients));
+        }
+
+        renderPatientList();
+    </script>
+</body>
+</html>
